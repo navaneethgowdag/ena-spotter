@@ -1,0 +1,150 @@
+=======================================================
+SPOTTER FREIGHT RATE PREDICTION - COMPREHENSIVE EDA LOG
+=======================================================
+
+1. DATASET SHAPES & COLUMNS:
+   train_test: 48,000 rows x 14 cols
+   Columns: ['load_id', 'pickup', 'delivery', 'pickup_lat', 'pickup_lon', 'delivery_lat', 'delivery_lon', 'distance', 'equipment', 'weight', 'date', 'market_index', 'quote_signal', 'posted_rate']
+   validation: 12,000 rows x 13 cols
+   Columns: ['load_id', 'pickup', 'delivery', 'pickup_lat', 'pickup_lon', 'delivery_lat', 'delivery_lon', 'distance', 'equipment', 'weight', 'date', 'market_index', 'quote_signal']
+   december_chart_inputs: 31 rows x 7 cols
+   Columns: ['pickup', 'delivery', 'distance', 'equipment', 'weight', 'date', 'predicted_rate']
+
+2. TEMPORAL COVERAGE:
+   train_test dates: 2025-01-01 to 2025-10-31 (304 days)
+   validation dates: 2025-11-01 to 2025-12-31 (61 days)
+   december dates:   2025-12-01 to 2025-12-31 (31 days)
+
+   Monthly volume (train_test):
+     2025-01: 4,918 loads
+     2025-02: 4,337 loads
+     2025-03: 5,036 loads
+     2025-04: 4,819 loads
+     2025-05: 4,913 loads
+     2025-06: 4,783 loads
+     2025-07: 4,912 loads
+     2025-08: 4,759 loads
+     2025-09: 4,670 loads
+     2025-10: 4,853 loads
+
+   Monthly volume (validation):
+     2025-11: 5,836 loads
+     2025-12: 6,164 loads
+
+3. MISSING VALUES:
+   train_test missing:
+     weight: 300 (0.62%)
+     market_index: 374 (0.78%)
+   validation missing:
+     weight: 165 (1.38%)
+     market_index: 249 (2.08%)
+   december_chart_inputs missing (excluding predicted_rate):
+
+4. IDENTIFIERS & DUPLICATES:
+   train_test load_id unique: 48,000 / 48,000
+   validation load_id unique: 12,000 / 12,000
+   Overlap between train & val load_id: 0
+
+5. TARGET VARIABLE (posted_rate) DISTRIBUTION:
+count    48000.000000
+mean      2373.980682
+std       1486.493245
+min         57.220000
+0.1%       200.309920
+1%         327.168800
+5%         599.738500
+25%       1251.555000
+50%       2030.760000
+75%       3330.750000
+95%       4953.766500
+99%       5972.834000
+99.9%    12854.561710
+max      25533.000000
+   Non-positive values count: 0
+
+6. RATE PER MILE (posted_rate / distance) DISTRIBUTION:
+count    48000.000000
+mean         2.215347
+std          0.583887
+min          0.333709
+0.1%         0.437364
+1%           1.673521
+5%           1.807533
+25%          1.986974
+50%          2.145348
+75%          2.342696
+95%          2.735925
+99%          3.176940
+99.9%       10.068775
+max         14.125294
+
+7. CATEGORICAL FEATURES & DISTRIBUTION SHIFT:
+   EQUIPMENT:
+     Train categories: 3, Val: 3, Dec: 1
+     Unseen in Val: 0 -> set()
+     Unseen in Dec: 0 -> set()
+   PICKUP:
+     Train categories: 64, Val: 72, Dec: 1
+     Unseen in Val: 8 -> {'Charlotte', 'Knoxville', 'Jackson', 'Norfolk', 'Allentown', 'Chicago', 'Laredo', 'San Diego'}
+     Unseen in Dec: 0 -> set()
+   DELIVERY:
+     Train categories: 64, Val: 72, Dec: 1
+     Unseen in Val: 8 -> {'Charlotte', 'Jackson', 'Knoxville', 'Norfolk', 'Allentown', 'Chicago', 'Laredo', 'San Diego'}
+     Unseen in Dec: 0 -> set()
+   LANES (pickup -> delivery):
+     Train unique lanes: 4,014
+     Val unique lanes: 4,214
+     Unseen lanes in validation: 736 (17.47%)
+     Dec lane in train? True: {('Lexington', 'Fort Wayne')}
+
+8. NUMERICAL COMPARISON (Train vs Val):
+   DISTANCE:
+     Train: mean=1135.86, std=728.56, min=70.00, median=953.30, max=3439.80
+     Val:   mean=1141.77, std=732.33, min=70.00, median=953.60, max=3325.70
+   WEIGHT:
+     Train: mean=31028.84, std=9391.44, min=-47500.00, median=31436.50, max=47500.00
+     Val:   mean=30506.64, std=10572.59, min=-47500.00, median=31193.00, max=47500.00
+   MARKET_INDEX:
+     Train: mean=1.08, std=0.17, min=0.68, median=1.06, max=1.47
+     Val:   mean=0.93, std=0.07, min=0.72, median=0.92, max=1.10
+   QUOTE_SIGNAL:
+     Train: mean=2.06, std=0.29, min=0.69, median=2.06, max=3.61
+     Val:   mean=2.05, std=0.22, min=1.23, median=2.05, max=2.90
+
+9. CORRELATION MATRIX (Train):
+               posted_rate  rate_per_mile  distance    weight  market_index  quote_signal
+posted_rate       1.000000       0.003147  0.908519  0.034840      0.034165     -0.039858
+rate_per_mile     0.003147       1.000000 -0.334601  0.074517      0.083478      0.049342
+distance          0.908519      -0.334601  1.000000  0.002544     -0.002181     -0.057244
+weight            0.034840       0.074517  0.002544  1.000000     -0.001331      0.008159
+market_index      0.034165       0.083478 -0.002181 -0.001331      1.000000     -0.067827
+quote_signal     -0.039858       0.049342 -0.057244  0.008159     -0.067827      1.000000
+
+10. NATURE OF market_index & quote_signal:
+    market_index daily variation: is market_index strictly constant per date? False
+    market_index overall range: [0.6764, 1.4678]
+    validation market_index overall range: [0.7236, 1.0990]
+    posted_rate / (quote_signal * distance) summary:
+      mean=1.0996, std=0.3728, min=0.1469, median=1.0040, max=11.3716
+
+11. DECEMBER INPUTS CHARACTERISTICS:
+    Pickup: ['Lexington']
+    Delivery: ['Fort Wayne']
+    Distance: [360]
+    Equipment: ['Dry Van']
+    Weight: [32000]
+    Dates: 31 rows from 2025-12-01 to 2025-12-31
+    Are market_index or quote_signal in december_chart_inputs? False
+    Historical loads in Train for Lexington -> Fort Wayne: 32
+    Historical rates for Lexington -> Fort Wayne:
+       distance equipment   weight       date  posted_rate  rate_per_mile  market_index  quote_signal
+654       358.3   Dry Van  22567.0 2025-01-05       757.93       2.115350       0.79554       2.11108
+886       383.2    Reefer  36531.0 2025-01-06       933.53       2.436143       0.79837       2.43088
+1571      358.2   Dry Van  31556.0 2025-01-10       788.08       2.200112       0.87356       2.18657
+2821      362.1   Dry Van  27842.0 2025-01-18       768.22       2.121569       0.84023       2.14650
+3913      357.5   Dry Van  37102.0 2025-01-25       807.89       2.259832       0.92241       2.26175
+6788      376.8   Dry Van  41021.0 2025-02-12       870.22       2.309501       1.04296       2.30284
+8369      355.1   Dry Van  27601.0 2025-02-23       791.25       2.228246       0.95940       2.21525
+10557     359.9   Dry Van  24178.0 2025-03-08       791.31       2.198694       1.01780       2.19709
+11817     367.6   Dry Van  16195.0 2025-03-16       806.54       2.194070       0.99336       2.21027
+12207     363.1   Dry Van  27600.0 2025-03-19       810.96       2.233434       1.14812       2.24940
