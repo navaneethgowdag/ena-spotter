@@ -1,28 +1,20 @@
 # Spotter Machine Learning Engineer Assessment — Loom Presentation Script
 
-**Presenter:** Navaneeth Gowda  
-**Target Duration:** 2.5 to 3.0 minutes  
-**Format:** Screen share with camera on  
-**Artifacts to show on screen:**
+**Presenter:** Navaneeth Gowda     
+**Artifacts to show:**
 1. `reports/Freight_Rate_Report.pdf` (Executive Summary, Table 1 Benchmark, Feature Importance)
 2. VS Code / Terminal showing `src/` modular structure (`src/features.py`, `src/train.py`, `src/predict.py`)
 3. `scorer_results/candidate_december.png` and terminal output of `score.py`
 
 ---
 
-## 0:00 – 0:30 | Introduction & Challenge Objective
-
-**[On Screen: `reports/Freight_Rate_Report.pdf` title page or GitHub repository overview]**
+## Introduction & Challenge Objective
 
 > "Hi everyone, I'm Navaneeth, and today I'm walking through my solution for the Spotter Freight Rate Prediction take-home assessment.
 > 
 > The objective of this challenge is to predict the posted dollar freight rate for spot loads based on load attributes like origin, destination, haul distance, equipment type, weight, and dispatch date. We were tasked with training on 48,000 historical loads from January through October 2025, predicting 12,000 loads in validation for November and December, and producing a 31-day forecast for a fixed scenario in December 2025 on the Lexington to Fort Wayne lane."
 
 ---
-
-## 0:30 – 1:05 | Key EDA Findings & Data-Quality Anomaly Remediation
-
-**[On Screen: `reports/Freight_Rate_Report.pdf` Section 1: Data Exploration & Quality Audit]**
 
 > "During exploratory data analysis, I audited the data schemas and uncovered several crucial findings:
 > 
@@ -32,10 +24,6 @@
 > 4. **Signal Audit (`quote_signal` & `market_index`):** While `quote_signal` appeared in train and validation, it was completely absent from the December scenario inputs. Rigorous time-series benchmarking revealed that training purely on fundamental shipment attributes and cyclical calendar features actually outperformed the model with `quote_signal` (MAE $106.16 vs $108.33), while guaranteeing zero target leakage and 100% architectural parity across all datasets."
 
 ---
-
-## 1:05 – 1:45 | Validation Strategy: Why Time-Based Splitting Matters
-
-**[On Screen: Table 1: Model Benchmarking & Performance Comparison in Report]**
 
 > "Validation strategy was a core focus of this assessment.
 > 
@@ -53,9 +41,6 @@
 
 ---
 
-## 1:45 – 2:25 | Code Walkthrough (The 4 Most Important Modules)
-
-**[On Screen: Switch to VS Code showing `src/` directory]**
 
 > "Let's quickly walk through the four key code modules in `src/`:
 > 
@@ -65,10 +50,6 @@
 > 4. **`src/predict.py`**: Generates `validation_predictions.csv` for all 12,000 loads, populates `data/december_chart_inputs.csv`, and automatically invokes `score.py`."
 
 ---
-
-## 2:25 – 3:00 | December Forecast, Scorer Verification & Conclusion
-
-**[On Screen: Terminal showing `score.py` passing & `scorer_results/candidate_december.png`]**
 
 > "Finally, let's examine the December forecast and scorer results.
 > 
