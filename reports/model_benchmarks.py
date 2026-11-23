@@ -46,15 +46,13 @@ def run_benchmarks():
     
     # Feature engineering helper
     # Coordinates mapping
-    city_lat = {}
-    city_lon = {}
-    for _, row in df.iterrows():
-        if row['pickup'] not in city_lat:
-            city_lat[row['pickup']] = row['pickup_lat']
-            city_lon[row['pickup']] = row['pickup_lon']
-        if row['delivery'] not in city_lat:
-            city_lat[row['delivery']] = row['delivery_lat']
-            city_lon[row['delivery']] = row['delivery_lon']
+    city_lat = df.groupby('pickup')['pickup_lat'].first().to_dict()
+    city_lon = df.groupby('pickup')['pickup_lon'].first().to_dict()
+    # Also delivery
+    del_lat = df.groupby('delivery')['delivery_lat'].first().to_dict()
+    del_lon = df.groupby('delivery')['delivery_lon'].first().to_dict()
+    city_lat.update(del_lat)
+    city_lon.update(del_lon)
 
     # Temporal features
     df['dayofweek'] = df['date'].dt.dayofweek
@@ -68,23 +66,15 @@ def run_benchmarks():
     df['log_weight'] = np.log(df['weight_imputed'])
     
     # Holiday proximity
-    # US Federal Holidays in 2025
-    holidays_2025 = pd.to_datetime([
+    holidays_2025 = np.array([
         '2025-01-01', '2025-01-20', '2025-02-17', '2025-05-26', 
         '2025-06-19', '2025-07-04', '2025-09-01', '2025-10-13', 
         '2025-11-11', '2025-11-27', '2025-12-25'
-    ])
+    ], dtype='datetime64[D]')
     
-    def min_days_to_holiday(dt_series):
-        days_diff = []
-        for d in dt_series:
-            diffs = (holidays_2025 - d).days
-            # nearest distance
-            min_dist = np.min(np.abs(diffs))
-            days_diff.append(min_dist)
-        return np.array(days_diff)
-
-    df['days_to_holiday'] = min_days_to_holiday(df['date'])
+    dt_arr = df['date'].dt.date.values.astype('datetime64[D]')
+    diffs = np.abs(dt_arr[:, None] - holidays_2025[None, :]).astype(int)
+    df['days_to_holiday'] = np.min(diffs, axis=1)
     df['is_holiday_week'] = (df['days_to_holiday'] <= 3).astype(int)
     
     # Time split:
@@ -108,16 +98,11 @@ def run_benchmarks():
     eq_rpm = train_data.groupby('equipment')['rpm'].median().to_dict()
     
     # 3. Lane median RPM (with smoothing / shrinkage towards equipment median)
-    lane_stats = train_data.groupby(['pickup', 'delivery'])['rpm'].agg(['count', 'median']).reset_index()
     smoothing = 5.0
-    lane_rpm_dict = {}
-    for _, row in lane_stats.iterrows():
-        key = (row['pickup'], row['delivery'])
-        cnt = row['count']
-        raw_med = row['median']
-        # Bayesian shrinkage
-        shrunk = (cnt * raw_med + smoothing * global_rpm) / (cnt + smoothing)
-        lane_rpm_dict[key] = shrunk
+    lane_cnt = train_data.groupby(['pickup', 'delivery'])['rpm'].count()
+    lane_med = train_data.groupby(['pickup', 'delivery'])['rpm'].median()
+    shrunk_series = (lane_cnt * lane_med + smoothing * global_rpm) / (lane_cnt + smoothing)
+    lane_rpm_dict = shrunk_series.to_dict()
 
     # 4. Pickup origin median RPM
     pickup_rpm_dict = train_data.groupby('pickup')['rpm'].median().to_dict()
@@ -196,11 +181,11 @@ def run_benchmarks():
     # -------------------------------------------------------------
     print("Fitting Candidate 4: Random Forest...", flush=True)
     rf = RandomForestRegressor(
-        n_estimators=50,
-        max_depth=12,
+        n_estimators=30,
+        max_depth=10,
         min_samples_split=10,
         min_samples_leaf=4,
-        n_jobs=2,
+        n_jobs=1,
         random_state=42
     )
     rf.fit(X_tr_ridge, train_data['rpm'])
