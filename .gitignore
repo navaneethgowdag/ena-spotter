@@ -1,0 +1,30 @@
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Model artifacts (if large)
+models/*.pkl
+models/*.joblib
+models/*.onnx
+
+# Scorer outputs (will be committed as needed or kept clean)
+# scorer_results/
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
